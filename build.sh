@@ -1,72 +1,41 @@
 #!/bin/bash
 
-echo
-echo "--------------------------------------"
-echo "    Pixel Experience 14.0 Buildbot    "
-echo "                  by                  "
-echo "                ponces                "
-echo "--------------------------------------"
-echo
-
-set -e
-
+# Set up environment variables
 BL=$PWD/treble_build_pe
 BD=$HOME/builds
+TREBLE_DIR=$PWD/treble_experimentations
+PATCHES_ZIP_URL=$(curl -s https://api.github.com/repos/TrebleDroid/treble_experimentations/releases/latest | grep -oP '"browser_download_url": "\K(.*patches-for-developers.zip)')
 
+# Functions
 initRepos() {
     if [ ! -d .repo ]; then
         echo "--> Initializing workspace"
         repo init -u https://github.com/PixelExperience/manifest -b fourteen
-        echo
-
-        echo "--> Preparing local manifest"
-        mkdir -p .repo/local_manifests
-        cp $BL/manifest.xml .repo/local_manifests/pixel.xml
-        echo
+    else
+        echo "--> Reinitializing workspace"
+        repo forall -c 'git reset --hard; git clean -fdx'
+        repo init -u https://github.com/PixelExperience/manifest -b fourteen
     fi
+
+    echo "--> Preparing local manifest"
+    mkdir -p .repo/local_manifests
+    cp $BL/manifest.xml .repo/local_manifests/pixel.xml
 }
 
 syncRepos() {
     echo "--> Syncing repos"
     repo sync -c --force-sync --no-clone-bundle --no-tags -j$(nproc --all)
-    echo
 }
 
 applyPatches() {
-    echo "--> Applying prerequisite patches"
-    bash $BL/apply-patches.sh $BL prerequisite
-    echo
-
-    echo "--> Applying TrebleDroid patches"
-    bash $BL/apply-patches.sh $BL trebledroid
-    echo
-
-    echo "--> Applying personal patches"
-    bash $BL/apply-patches.sh $BL personal
-    echo
-
-    echo "--> Generating makefiles"
-    cd device/phh/treble
-    cp $BL/pe.mk .
-    bash generate.sh pe
-    cd ../../..
-    echo
+    echo "--> Applying patches"
+    bash $BL/apply-patches.sh $BL
 }
 
 setupEnv() {
     echo "--> Setting up build environment"
     source build/envsetup.sh &>/dev/null
     mkdir -p $BD
-    echo
-}
-
-buildTrebleApp() {
-    echo "--> Building treble_app"
-    cd treble_app
-    bash build.sh release
-    cp TrebleApp.apk ../vendor/hardware_overlay/TrebleApp/app.apk
-    cd ..
-    echo
 }
 
 buildVariant() {
@@ -75,79 +44,32 @@ buildVariant() {
     make -j$(nproc --all) installclean
     make -j$(nproc --all) systemimage
     mv $OUT/system.img $BD/system-treble_arm64_bvN.img
-    echo
 }
 
-buildSlimVariant() {
-    echo "--> Building treble_arm64_bvN-slim"
-    (cd vendor/gms && git am $BL/patches/slim.patch)
-    make -j$(nproc --all) systemimage
-    (cd vendor/gms && git reset --hard HEAD~1)
-    mv $OUT/system.img $BD/system-treble_arm64_bvN-slim.img
-    echo
-}
+# Main execution
+echo "--------------------------------------"
+echo "    Pixel Experience 14.0 Buildbot    "
+echo "                  by                  "
+echo "                ponces                "
+echo "--------------------------------------"
 
-buildVndkliteVariant() {
-    echo "--> Building treble_arm64_bvN-vndklite"
-    cd sas-creator
-    sudo bash lite-adapter.sh 64 $BD/system-treble_arm64_bvN.img
-    cp s.img $BD/system-treble_arm64_bvN-vndklite.img
-    sudo rm -rf s.img d tmp
-    cd ..
-    echo
-}
+# Download and prepare TrebleDroid files
+wget -q "$PATCHES_ZIP_URL" -O patches-for-developers.zip
+unzip -q patches-for-developers.zip -d $TREBLE_DIR
+cp $TREBLE_DIR/manifest.xml .repo/local_manifests/pixel.xml
+rm -rf system
 
-generatePackages() {
-    echo "--> Generating packages"
-    buildDate="$(date +%Y%m%d)"
-    xz -cv $BD/system-treble_arm64_bvN.img -T0 > $BD/PixelExperience_arm64-ab-14.0-$buildDate-UNOFFICIAL.img.xz
-    xz -cv $BD/system-treble_arm64_bvN-vndklite.img -T0 > $BD/PixelExperience_arm64-ab-vndklite-14.0-$buildDate-UNOFFICIAL.img.xz
-    xz -cv $BD/system-treble_arm64_bvN-slim.img -T0 > $BD/PixelExperience_arm64-ab-slim-14.0-$buildDate-UNOFFICIAL.img.xz
-    rm -rf $BD/system-*.img
-    echo
-}
-
-generateOta() {
-    echo "--> Generating OTA file"
-    version="$(date +v%Y.%m.%d)"
-    timestamp="$START"
-    json="{\"version\": \"$version\",\"date\": \"$timestamp\",\"variants\": ["
-    find $BD/ -name "PixelExperience_*" | sort | {
-        while read file; do
-            filename="$(basename $file)"
-            if [[ $filename == *"vndklite"* ]]; then
-                name="treble_arm64_bvN-vndklite"
-            elif [[ $filename == *"slim"* ]]; then
-                name="treble_arm64_bvN-slim"
-            else
-                name="treble_arm64_bvN"
-            fi
-            size=$(wc -c $file | awk '{print $1}')
-            url="https://github.com/ponces/treble_build_pe/releases/download/$version/$filename"
-            json="${json} {\"name\": \"$name\",\"size\": \"$size\",\"url\": \"$url\"},"
-        done
-        json="${json%?}]}"
-        echo "$json" | jq . > $BL/ota.json
-    }
-    echo
-}
-
-START=$(date +%s)
-
+# Initialize and sync repositories
 initRepos
 syncRepos
+
+# Apply patches
 applyPatches
+
+# Set up build environment
 setupEnv
-buildTrebleApp
+
+# Build the GSI variant
 buildVariant
-buildSlimVariant
-buildVndkliteVariant
-generatePackages
-generateOta
 
-END=$(date +%s)
-ELAPSEDM=$(($(($END-$START))/60))
-ELAPSEDS=$(($(($END-$START))-$ELAPSEDM*60))
-
-echo "--> Buildbot completed in $ELAPSEDM minutes and $ELAPSEDS seconds"
-echo
+echo "--> Build completed successfully"
