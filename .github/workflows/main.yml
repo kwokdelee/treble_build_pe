@@ -1,0 +1,74 @@
+name: Build Pixel Experience GSI
+
+on:
+  schedule:
+    - cron: '0 0 * * 0' # Runs every Sunday at midnight
+  workflow_dispatch:
+
+jobs:
+  build:
+    runs-on: ubuntu-latest
+    name: Build GSI
+
+    steps:
+    - name: Checkout treble_build_pe repository
+      uses: actions/checkout@v2
+      with:
+        repository: 'kwokdelee/treble_build_pe'
+        token: ${{ secrets.GITHUB_TOKEN }}
+        path: 'treble_build_pe'
+
+    - name: Cleanup existing treble_build_pe directory
+      run: |
+        if [ -d "treble_build_pe" ]; then
+          echo "Cleaning up existing treble_build_pe directory..."
+          rm -rf treble_build_pe
+        fi
+
+    - name: Clone treble_build_pe repository
+      run: git clone https://github.com/kwokdelee/treble_build_pe.git -b fourteen
+      working-directory: ${{ github.workspace }}
+
+    - name: Install repo command
+      run: |
+        mkdir -p ~/bin
+        PATH=~/bin:$PATH
+        curl https://storage.googleapis.com/git-repo-downloads/repo > ~/bin/repo
+        chmod a+rx ~/bin/repo
+        echo "PATH=~/bin:$PATH" >> $GITHUB_ENV
+
+    - name: Check for latest security patch
+      id: check_patch
+      run: |
+        LATEST_PATCH_URL=$(curl -s https://developers.google.com/android/ota | grep -oP 'https://dl.google.com/dl/android/aosp/.*?\.zip' | head -1)
+        echo "LATEST_PATCH_URL=$LATEST_PATCH_URL" >> $GITHUB_ENV
+        if [ -z "$LATEST_PATCH_URL" ]; then
+          echo "No new security patch found."
+          echo "PATCH_FOUND=false" >> $GITHUB_ENV
+        else
+          echo "PATCH_FOUND=true" >> $GITHUB_ENV
+        fi
+
+    - name: Apply security patch
+      if: env.PATCH_FOUND == 'true'
+      run: |
+        wget $LATEST_PATCH_URL -O security_patch.zip
+        bash treble_build_pe/apply_security_patch.sh security_patch.zip
+
+    - name: Run build.sh script
+      run: bash treble_build_pe/build.sh
+      working-directory: ${{ github.workspace }}
+
+    - name: Upload GSI
+      uses: actions/upload-artifact@v2
+      with:
+        name: Pixel-Experience-GSI
+        path: out/target/product/treble_arm64_bvS/system.img
+
+    - name: Create or update new branch
+      run: |
+        git checkout -b fourteen || git checkout fourteen
+        git merge --no-ff --no-commit fourteen_plus || true
+        git commit -m "Merge updates into fourteen"
+        git push origin fourteen
+        
