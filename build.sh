@@ -2,9 +2,9 @@
 
 echo
 echo "--------------------------------------"
-echo "    Pixel Experience 14.0 Buildbot    "
+echo "    Pixel Experience 13.0 Buildbot    "
 echo "                  by                  "
-echo "                kwokdelee                "
+echo "                ponces                "
 echo "--------------------------------------"
 echo
 
@@ -16,7 +16,7 @@ BD=$HOME/builds
 initRepos() {
     if [ ! -d .repo ]; then
         echo "--> Initializing workspace"
-        repo init -u https://github.com/PixelExperience/manifest -b fourteen
+        repo init -u https://github.com/PixelExperience/manifest -b thirteen
         echo
 
         echo "--> Preparing local manifest"
