@@ -31,9 +31,9 @@ jobs:
       working-directory: ${{ github.workspace }}
 
     - name: Apply patches and setup environment
-      run: bash treble_build_pe/aplypatches.sh applyPatches && bash treble_pixel/build.sh setupEnv
+      run: bash treble_build_pe/aplypatches.sh applyPatches && bash treble_build_pe/build.sh setupEnv
       working-directory: ${{ github.workspace }}
 
     - name: Build variants
-      run: bash treble_pixel/build.sh buildVariant && bash treble_pixel/build.sh buildVndkliteVariant
+      run: bash treble_build_pe/build.sh buildVariant && bash treble_build_pe/build.sh buildVndkliteVariant
       working-directory: ${{ github.workspace }}
