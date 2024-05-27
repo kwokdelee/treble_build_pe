@@ -2,21 +2,21 @@
 
 echo
 echo "--------------------------------------"
-echo "    Pixel Experience 13.0 Buildbot    "
+echo "    Pixel Experience 14.0 Buildbot    "
 echo "                  by                  "
-echo "                ponces                "
+echo "                kwokdelee                "
 echo "--------------------------------------"
 echo
 
 set -e
 
-BL=$PWD/treble_build_pe
+BL=$PWD/treble_pixel
 BD=$HOME/builds
 
 initRepos() {
     if [ ! -d .repo ]; then
         echo "--> Initializing workspace"
-        repo init -u https://github.com/PixelExperience/manifest -b thirteen
+        repo init -u https://github.com/PixelExperience/manifest -b fourteen
         echo
 
         echo "--> Preparing local manifest"
@@ -33,10 +33,6 @@ syncRepos() {
 }
 
 applyPatches() {
-    echo "--> Applying prerequisite patches"
-    bash $BL/apply-patches.sh $BL prerequisite
-    echo
-
     echo "--> Applying TrebleDroid patches"
     bash $BL/apply-patches.sh $BL trebledroid
     echo
@@ -78,15 +74,6 @@ buildVariant() {
     echo
 }
 
-buildSlimVariant() {
-    echo "--> Building treble_arm64_bvN-slim"
-    (cd vendor/gms && git am $BL/patches/slim.patch)
-    make -j$(nproc --all) systemimage
-    (cd vendor/gms && git reset --hard HEAD~1)
-    mv $OUT/system.img $BD/system-treble_arm64_bvN-slim.img
-    echo
-}
-
 buildVndkliteVariant() {
     echo "--> Building treble_arm64_bvN-vndklite"
     cd sas-creator
@@ -100,9 +87,8 @@ buildVndkliteVariant() {
 generatePackages() {
     echo "--> Generating packages"
     buildDate="$(date +%Y%m%d)"
-    xz -cv $BD/system-treble_arm64_bvN.img -T0 > $BD/PixelExperience_arm64-ab-13.0-$buildDate-UNOFFICIAL.img.xz
-    xz -cv $BD/system-treble_arm64_bvN-vndklite.img -T0 > $BD/PixelExperience_arm64-ab-vndklite-13.0-$buildDate-UNOFFICIAL.img.xz
-    xz -cv $BD/system-treble_arm64_bvN-slim.img -T0 > $BD/PixelExperience_arm64-ab-slim-13.0-$buildDate-UNOFFICIAL.img.xz
+    xz -cv $BD/system-treble_arm64_bvN.img -T0 > $BD/PixelExperience_arm64-ab-14.0-$buildDate-UNOFFICIAL.img.xz
+    xz -cv $BD/system-treble_arm64_bvN-vndklite.img -T0 > $BD/PixelExperience_arm64-ab-vndklite-14.0-$buildDate-UNOFFICIAL.img.xz
     rm -rf $BD/system-*.img
     echo
 }
@@ -117,13 +103,11 @@ generateOta() {
             filename="$(basename $file)"
             if [[ $filename == *"vndklite"* ]]; then
                 name="treble_arm64_bvN-vndklite"
-            elif [[ $filename == *"slim"* ]]; then
-                name="treble_arm64_bvN-slim"
             else
                 name="treble_arm64_bvN"
             fi
             size=$(wc -c $file | awk '{print $1}')
-            url="https://github.com/ponces/treble_build_pe/releases/download/$version/$filename"
+            url="https://github.com/kwokdelee/treble_build_pe/releases/download/$version/$filename"
             json="${json} {\"name\": \"$name\",\"size\": \"$size\",\"url\": \"$url\"},"
         done
         json="${json%?}]}"
@@ -140,7 +124,6 @@ applyPatches
 setupEnv
 buildTrebleApp
 buildVariant
-buildSlimVariant
 buildVndkliteVariant
 generatePackages
 generateOta
