@@ -27,13 +27,13 @@ jobs:
         echo "PATH=~/bin:$PATH" >> $GITHUB_ENV
 
     - name: Initialize and sync repositories
-      run: bash treble_build_pe/build.sh initRepos
+      run: bash build.sh initRepos
       working-directory: ${{ github.workspace }}
 
     - name: Apply patches and setup environment
-      run: bash treble_build_pe/aplypatches.sh applyPatches && bash treble_build_pe/build.sh setupEnv
+      run: bash aply-patches.sh applyPatches && bash build.sh setupEnv
       working-directory: ${{ github.workspace }}
 
     - name: Build variants
-      run: bash treble_build_pe/build.sh buildVariant && bash treble_build_pe/build.sh buildVndkliteVariant
+      run: bash build.sh buildVariant && bash treble_build_pe/build.sh buildVndkliteVariant
       working-directory: ${{ github.workspace }}
