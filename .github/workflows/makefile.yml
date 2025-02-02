@@ -3,11 +3,7 @@ name: Build GSI ROM
 on:
   push:
     branches:
-      - fourteen
-
-jobs:
-  build:
-    runs-on: ubuntu-latest
+      - fourteen    runs-on: ubuntu-latest
 
     steps:
       - name: Checkout code
@@ -27,7 +23,7 @@ jobs:
           libsdl1.2-dev libwxgtk3.0-gtk3-dev imagemagick git lunzip \
           lzop schedtool squashfs-tools xsltproc zip zlib1g-dev \
           openjdk-8-jdk python-is-python3 perl xmlstarlet virtualenv xz-utils rr jq \
-          libncurses6 pngcrush lib32ncurses6-dev git-lfs openjdk-11-jdk-headless
+          libncurses6-dev lib32ncurses6-dev git-lfs openjdk-11-jdk-headless
 
       - name: Set up Repo Tool
         run: |
