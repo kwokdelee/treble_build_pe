@@ -34,13 +34,11 @@ jobs:
           mkdir -p ~/bin
           curl https://storage.googleapis.com/git-repo-downloads/repo > ~/bin/repo
           chmod a+x ~/bin/repo
-          echo 'export PATH=~/bin:$PATH' >> ~/.bashrc
-          echo 'export PATH=~/bin:$PATH' >> ~/.profile
-          source ~/.bashrc
-          source ~/.profile
+          echo 'export PATH=~/bin:$PATH' >> $GITHUB_ENV
 
       - name: Initialize the ROM source
         run: |
+          source $GITHUB_ENV
           mkdir ~/rom && cd ~/rom
           repo init -u https://github.com/LineageOS/android.git -b lineage-22.1
           git clone https://github.com/phhusson/treble_manifest .repo/local_manifests -b android-15.0
