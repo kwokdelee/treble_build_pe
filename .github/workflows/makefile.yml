@@ -3,7 +3,7 @@ name: Build GSI ROM
 on:
   push:
     branches:
-      - main
+      - fourteen
 
 jobs:
   build:
@@ -40,8 +40,8 @@ jobs:
       - name: Initialize the ROM source
         run: |
           mkdir ~/rom && cd ~/rom
-          repo init -u https://github.com/LineageOS/android.git -b lineage-19.1
-          git clone https://github.com/phhusson/treble_manifest .repo/local_manifests -b android-12.0
+          repo init -u https://github.com/LineageOS/android.git -b lineage-22.1
+          git clone https://github.com/phhusson/treble_manifest .repo/local_manifests -b android-15.0
           repo sync -c -j6 --force-sync --no-tags --no-clone-bundle
 
       - name: Build the GSI
