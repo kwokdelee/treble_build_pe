@@ -27,7 +27,7 @@ jobs:
           libsdl1.2-dev imagemagick git lunzip \
           lzop schedtool squashfs-tools xsltproc zip zlib1g-dev \
           openjdk-8-jdk python-is-python3 perl xmlstarlet virtualenv xz-utils rr jq \
-          libncurses6-dev lib32ncurses6-dev git-lfs openjdk-11-jdk-headless
+          libncurses-dev lib32ncurses-dev git-lfs openjdk-11-jdk-headless
 
       - name: Set up Repo Tool
         run: |
