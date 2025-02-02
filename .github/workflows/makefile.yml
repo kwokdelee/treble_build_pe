@@ -34,11 +34,13 @@ jobs:
           mkdir -p ~/bin
           curl https://storage.googleapis.com/git-repo-downloads/repo > ~/bin/repo
           chmod a+x ~/bin/repo
-          echo 'export PATH=~/bin:$PATH' >> $GITHUB_ENV
+          echo 'export PATH=~/bin:$PATH' >> ~/.bashrc
+          echo 'export PATH=~/bin:$PATH' >> ~/.profile
+          source ~/.bashrc
+          source ~/.profile
 
       - name: Verify Repo Tool Installation
         run: |
-          source $GITHUB_ENV
           which repo
           repo --version
 
