@@ -36,6 +36,13 @@ jobs:
           chmod a+x ~/bin/repo
           echo 'export PATH=~/bin:$PATH' >> ~/.bashrc
           source ~/.bashrc
+          echo $PATH
+          ls -l ~/bin
+
+      - name: Verify Repo Tool Installation
+        run: |
+          which repo
+          repo --version
 
       - name: Initialize the ROM source
         run: |
